@@ -1,6 +1,6 @@
 import argparse
 import json
-from collections import defaultdict, Counter
+from collections import defaultdict, Counter, OrderedDict
 import re
 import csv
 import os
@@ -16,16 +16,19 @@ NON_LOWER_RE = re.compile('[^a-z]|aße$|asse$')
 
 
 def make_name(name):
+    if '(' in name:
+        name = name[:name.index('(')].strip()
     return NON_LOWER_RE.sub('', name.lower().replace('ß', 'ss'))
 
 
 def clean_street(street):
-    return street.split(' / ')
-    return [p.strip() for p in parts]
+    parts = street.split(' / ')
+    return list(OrderedDict([(p.strip(), None) for p in parts]).keys())
 
 
 class GeoIndex(object):
-    def __init__(self, filename, district_filename, engine_config):
+    def __init__(self, filename, district_filename, engine_config,
+                 mapping=None):
         with open(filename) as f:
             js = json.load(f)
         with open(district_filename) as f:
@@ -34,6 +37,15 @@ class GeoIndex(object):
         self.engine = create_engine(engine_config)
 
         self.features = js['features']
+
+        self.mapping = mapping or {}
+        for k in self.mapping:
+            self.features.append({
+                "type": "Feature",
+                'properties': {'name': k, 'osmid': -1},
+                'geometry': {'type': 'Point', 'coordinates': self.mapping[k]}
+            })
+
         self.lost_streets = Counter()
 
         self.districts = {}
@@ -62,6 +74,7 @@ class GeoIndex(object):
         if district not in self.districts:
             raise Exception('Missing district')
         name = make_name(original_name)
+
         if name in self.names:
             candidates = [i for i in self.names[name]]
             if len(candidates) > 1:
@@ -130,9 +143,9 @@ class GeoIndex(object):
 
     def get_accidents_for_year(self, year):
         reader = csv.DictReader(open('csvs/%d.csv' % year))
-        for line in reader:
+        for lineno, line in enumerate(reader, start=1):
             if not line['directorate']:
-                print(year, line)
+                print(year, lineno, line, file=sys.stderr)
             streets = clean_street(line['street'])
             geo_data = self.get_georeference(streets, district=line['directorate'])
             geo_data['year'] = year
@@ -205,6 +218,16 @@ get_accident_list.format = 'csv'
 
 def get_accident_street_list(idx, accidents):
     for accident in accidents:
+        if not accident['features']:
+            yield {
+                'osmid': None,
+                'name': accident['street'],
+                'count': accident['count'],
+                'year': accident['year'],
+                'directorate': accident['directorate'],
+                'length': None
+            }
+            continue
         for feat_id, feat in zip(accident['feature_idx'], accident['features']):
             yield {
                 'osmid': feat['properties']['osmid'],
@@ -214,6 +237,7 @@ def get_accident_street_list(idx, accidents):
                 'directorate': accident['directorate'],
                 'length': idx.shapes[feat_id].length
             }
+            break
 get_accident_street_list.format = 'csv'
 
 
@@ -223,15 +247,19 @@ def get_missing(idx, accidents):
     for missing in idx.lost_streets.most_common():
         yield {
             'name': missing[0],
+            'original_name': missing[0],
             'count': missing[1],
-            'type': 'accidents'
+            'type': 'accidents',
+            'osmid': None
         }
-    for feat in idx.features:
-        yield {
-            'name': feat['properties']['name'],
-            'count': 0,
-            'type': 'osm'
-        }
+    # for feat in idx.features:
+    #     yield {
+    #         'name': feat['properties']['name'],
+    #         'original_name': feat['properties']['name'],
+    #         'count': 0,
+    #         'type': 'osm',
+    #         'osmid': feat['properties']['osmid'],
+    #     }
 
 
 GENERATORS = {
@@ -246,7 +274,8 @@ def main(name, year, engine=None):
     engine = engine or os.environ.get('DATABASE')
     idx = GeoIndex('geo/berlin_streets.geojson',
                    'geo/polizeidirektionen.geojson',
-                   engine_config=engine)
+                   engine_config=engine,
+                   mapping=json.load(open('geo/missing_mapping.json')))
     if not year:
         year = range(2003, 2016)
     accident_generator = idx.get_accidents(year)
