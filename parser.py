@@ -3,8 +3,10 @@ import sys
 import re
 
 
-STREET_RE = re.compile('^[A-Z\d]{3,}[^a-z]+[A-Z]{3}[^a-z]+$')
+STREET_RE = re.compile('^([A-Z\dÖÄÜß\-\(]{2,}|\s*/\s*)[^a-z]+[A-ZÖÄÜß-]{2}[^a-z]*$')
+SHORT_STREET_RE = re.compile('^([A-Z\dÖÄÜß\-\(]{2,}|\s*/\s*)[^a-z]*$')
 NUM_RE = re.compile('^\s*(\d+)\s*')
+LONG_LINE_LENGTH = 70
 
 MULTI_SPACE_RE = re.compile('\s{2,}')
 
@@ -17,12 +19,15 @@ def parse_lines(reader):
     MAX_DIRECTORATE_CELL = 1
     current = None
     directorate = None
-    for line in reader:
+    for lineno, line in enumerate(reader, start=1):
         for i, cell in enumerate(line):
             if not cell:
                 continue
-            is_street = STREET_RE.match(cell)
-            if is_street is None:
+            if current is not None and len(current) > LONG_LINE_LENGTH:
+                is_street = SHORT_STREET_RE.match(cell)
+            else:
+                is_street = STREET_RE.match(cell)
+            if is_street is None and current is None:
                 is_num = NUM_RE.match(cell)
                 if is_num is not None and i <= MAX_DIRECTORATE_CELL:
                     direct_val = int(is_num.group(1).strip())
@@ -30,6 +35,8 @@ def parse_lines(reader):
                                                 direct_val > directorate):
                         directorate = direct_val
                 continue
+            if is_street is None:
+                raise ValueError('%s: %s (%s)' % (lineno, line, current))
             if current is not None:
                 current = current + ' ' + is_street.group(0)
             else:
