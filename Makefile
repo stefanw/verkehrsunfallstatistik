@@ -34,25 +34,48 @@ csvs/2015_raw.csv: pdfs/radfahrer2015.pdf tabula-0.9.0-SNAPSHOT-jar-with-depende
 
 csvs/2014_raw.csv: pdfs/radfahrer2014.pdf tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar
 	mkdir -p csvs
-	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 34-102 -a 50,83,811,550 -c 108,134,500 -o csvs/2014_raw.csv pdfs/radfahrer2014.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 34-102 -a 50,83,811,550 -c 108,134,500 -o $@ pdfs/radfahrer2014.pdf
 
 csvs/2013_raw.csv: pdfs/radfahrer2013.pdf tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar
-	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 34-101 -a 50,83,811,550 -c 116,143,500 -o csvs/2013_raw.csv pdfs/radfahrer2013.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 34-101 -a 50,83,811,550 -c 116,143,500 -o $@ pdfs/radfahrer2013.pdf
 
 csvs/2012_raw.csv: pdfs/radfahrer2012.pdf tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar
-	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 34-103 -a 50,83,811,550 -c 132,165,475 -o csvs/2012_raw.csv pdfs/radfahrer2012.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 34-103 -a 50,83,811,550 -c 132,165,475 -o $@ pdfs/radfahrer2012.pdf
 
 csvs/2011_raw.csv: pdfs/radfahrer2011.pdf tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar
-	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 34-102 -a 50,83,811,550 -c 130.39,190.56,493 -n -o csvs/2011_raw.csv pdfs/radfahrer2011.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 34-102 -a 50,83,811,550 -c 130,190,497 -o $@ pdfs/radfahrer2011.pdf
 
 csvs/2010_raw.csv: pdfs/radfahrer2010.pdf tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar
-	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 34-102 -a 50,83,811,550 -c 130.39,190.56,493 -n -o csvs/2010_raw.csv pdfs/radfahrer2010.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 34-46 -a 50,83,811,550 -c 145,204,497 -o csvs/2010_raw_1.csv pdfs/radfahrer2010.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 47-57 -a 50,83,811,550 -c 127,188,497 -o csvs/2010_raw_2.csv pdfs/radfahrer2010.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 48-102 -a 50,83,811,550 -c 115,176,488 -o csvs/2010_raw_3.csv pdfs/radfahrer2010.pdf
+	cat csvs/2010_raw_1.csv csvs/2010_raw_2.csv csvs/2010_raw_3.csv > $@
+	rm csvs/2010_raw_*.csv
+
 
 csvs/2009_raw.csv: pdfs/radfahrer2009.pdf tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar
-	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 34-108 -a 50,83,811,550 -c 130.39,190.56,493 -n -o csvs/2009_raw.csv pdfs/radfahrer2009.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 34-47 -a 50,83,811,550 -c 146,205,483 -o csvs/2009_raw_1.csv pdfs/radfahrer2009.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 48-60 -a 50,83,811,550 -c 130,189,487 -o csvs/2009_raw_2.csv pdfs/radfahrer2009.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 61-71 -a 50,83,811,550 -c 115,176,480 -o csvs/2009_raw_3.csv pdfs/radfahrer2009.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 72-83 -a 50,83,811,550 -c 115,176,493 -o csvs/2009_raw_4.csv pdfs/radfahrer2009.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 84-108 -a 50,83,811,550 -c 115,175,500 -o csvs/2009_raw_5.csv pdfs/radfahrer2009.pdf
+	cat csvs/2009_raw_*.csv > $@
+	rm csvs/2009_raw_*.csv
 
 csvs/2008_raw.csv: pdfs/radfahrer2008.pdf tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar
-	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 34-130 -a 50,83,811,550 -c 130.39,190.56,493 -n -g -o csvs/2008_raw.csv pdfs/radfahrer2008.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 34-50 -a 50,83,811,550 -c 130,187,498 -o csvs/2008_raw_1.csv pdfs/radfahrer2008.pdf
+	perl -pi -e  's/,,OSTSEESTR,/,,OSTSEESTR,1/g' csvs/2008_raw_1.csv
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 51-65 -a 50,83,811,550 -c 118,178,497 -o csvs/2008_raw_2.csv pdfs/radfahrer2008.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 66-80 -a 50,83,811,550 -c 140,200,484 -o csvs/2008_raw_3.csv pdfs/radfahrer2008.pdf
+	perl -pi -e  's|,,"JULIE-WOLFTHORN-STR. / AM NORDBAHNHOF / ",|,,"JULIE-WOLFTHORN-STR. / AM NORDBAHNHOF / ",1|g' csvs/2008_raw_3.csv
+	perl -pi -e  's|"",,"AM LUSTGARTEN / KARL-LIEBKNECHT-STR. / ",|"",,"AM LUSTGARTEN / KARL-LIEBKNECHT-STR. / ",1|g' csvs/2008_raw_3.csv
+	perl -pi -e  's|"",,"JANNOWITZBRÜCKE / ALEXANDERSTR. / ",|"",,"JANNOWITZBRÜCKE / ALEXANDERSTR. / ",1|g' csvs/2008_raw_3.csv
+	perl -pi -e  's|"",,"FENNSTR. / REINICKENDORFER STR. / SCHÖNWALDER ",|"",,"FENNSTR. / REINICKENDORFER STR. / SCHÖNWALDER ",1|g' csvs/2008_raw_3.csv
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 81-97 -a 50,83,811,550 -c 157,215,479 -o csvs/2008_raw_4.csv pdfs/radfahrer2008.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 98-112 -a 50,83,811,550 -c 130,190,482 -o csvs/2008_raw_5.csv pdfs/radfahrer2008.pdf
+	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 113-130 -a 50,83,811,550 -c 142,208,475 -o csvs/2008_raw_6.csv pdfs/radfahrer2008.pdf
+	cat csvs/2008_raw_*.csv > $@
+	rm csvs/2008_raw_*.csv
 
 csvs/2007_raw.csv: pdfs/radfahrer2007.pdf tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar
 	java -jar ./tabula-0.9.0-SNAPSHOT-jar-with-dependencies.jar -p 35-117 -a 50,83,811,550 -c 129,184,500 -n -o csvs/2007_raw.csv pdfs/radfahrer2007.pdf
