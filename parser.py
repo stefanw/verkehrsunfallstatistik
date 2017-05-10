@@ -33,7 +33,7 @@ def parse_lines(reader):
                         for a, b, _ in back_log:
                             yield a, b, directorate
                         back_log = []
-                    if isinstance(current, tuple) and current[2]  is None:
+                    if isinstance(current, tuple) and current[2] is None:
                         yield current[0], current[1], directorate
                         current = None
         if line[0] and not is_num:

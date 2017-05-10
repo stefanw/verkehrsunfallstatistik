@@ -3,7 +3,7 @@ set -ex
 mkdir -p pdfs
 pushd pdfs
 
-for i in `seq 2004 2015`
+for i in `seq 2004 2016`
 do
   wget -nc -O "radfahrer$i.pdf" "https://www.berlin.de/polizei/_assets/aufgaben/anlagen-verkehrssicherheit/radfahrer$i.pdf" || true
 done

@@ -284,7 +284,7 @@ def time_compare(idx, accidents):
         feat = idx.features[feat_id]
         length = idx.shapes[feat_id].length or 1
         old_years_count = sum(year_stat[y] for y in range(2008, 2012))
-        new_years_count = sum(year_stat[y] for y in range(2012, 2016))
+        new_years_count = sum(year_stat[y] for y in range(2012, 2017))
         difference = new_years_count - old_years_count
         old_mean = old_years_count / YEAR_COUNT
         new_mean = new_years_count / YEAR_COUNT
@@ -325,6 +325,7 @@ def time_compare(idx, accidents):
         }
 time_compare.format = 'geojson'
 
+
 def get_missing(idx, accidents):
     for a in accidents:
         pass
@@ -363,7 +364,7 @@ def main(name, year, engine=None):
                    mapping=json.load(open('geo/missing_mapping.json')),
                    district_history=json.load(open('geo/policedistrict_historic.json')))
     if not year:
-        year = range(2003, 2016)
+        year = range(2008, 2017)
     accident_generator = idx.get_accidents(year)
     processor = GENERATORS[name]
     processed = processor(idx, accident_generator)
