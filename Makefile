@@ -5,7 +5,15 @@ TABULA=tabula-0.9.2-jar-with-dependencies.jar
 
 out/accidents_points_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
 	mkdir -p out
-	python generate.py accident_locations --engine $(PG_ENGINE) --year $* > $@
+	python generate.py accident_points --engine $(PG_ENGINE) --year $* > $@
+
+out/accidents_streets_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
+	mkdir -p out
+	python generate.py accident_streets --engine $(PG_ENGINE) --year $* > $@
+
+out/accidents_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
+	mkdir -p out
+	python generate.py accidents --engine $(PG_ENGINE) --year $* > $@
 
 out/accidents_list_%.csv: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
 	mkdir -p out

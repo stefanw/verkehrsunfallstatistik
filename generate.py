@@ -141,6 +141,7 @@ class GeoIndex(object):
 
         center = self.get_center(features, len_streets)
         return {
+            'streets': streets,
             'center': center,
             'features': [self.features[f] for f in features],
             'feature_idx': features
@@ -189,7 +190,7 @@ class GeoIndex(object):
 
 
 def write_geojson(fh, generator):
-    fh.write('''{"type":"FeatureCollection","features":[''')
+    fh.write('{"type":"FeatureCollection","features":[')
     first = True
     for feat in generator:
         if first:
@@ -210,24 +211,64 @@ def write_csv(fh, generator):
         writer.writerow(x)
 
 
-def get_accident_locations(idx, accidents):
+def get_accident_feature(accident):
+    return {
+        "type": "Feature",
+        "properties": {
+            "name": accident['street'],
+            "year": int(accident['year']),
+            "count": int(accident['count']),
+            "directorate": accident['directorate']
+        }
+    }
+
+
+def get_accidents_as_points(idx, accidents):
     for accident in accidents:
         center = accident['center']
         if center is None:
             continue
+        acc_feat = get_accident_feature(accident)
+        acc_feat['geometry'] = {
+              "type": "Point",
+              "coordinates": [center.x, center.y]
+        }
+        yield acc_feat
+
+
+def get_accidents_as_lines(idx, accidents):
+    accidents_by_feature = defaultdict(int)
+    for accident in accidents:
+        for feat_id in accident['feature_idx']:
+            accidents_by_feature[feat_id] += int(accident['count'])
+
+    for feat_id, count in accidents_by_feature.items():
+        feat = idx.features[feat_id]
+        length = idx.shapes[feat_id].length or 1
         yield {
             "type": "Feature",
             "properties": {
-                "name": accident['street'],
-                "year": int(accident['year']),
-                "count": int(accident['count']),
-                "directorate": accident['directorate']
+                "name": feat['properties']['name'],
+                "length": length,
+                "count": count,
+                "count_by_length": count / length
             },
-            "geometry": {
-                  "type": "Point",
-                  "coordinates": [center.x, center.y]
-            }
+            "geometry": feat['geometry']
         }
+    #
+    # for accident in accidents:
+    #     for feat_id, feat in zip(accident['feature_idx'], accident['features']):
+    #         acc_feat = get_accident_feature(accident)
+    #         acc_feat['geometry'] = feat['geometry']
+    #         yield acc_feat
+
+
+def get_accidents_as_features(idx, accidents):
+    for accident in accidents:
+        if len(accident['features']) > 1:
+            yield from get_accidents_as_points(idx, [accident])
+        else:
+            yield from get_accidents_as_lines(idx, [accident])
 
 
 def get_accident_list(idx, accidents):
@@ -244,7 +285,6 @@ def get_accident_list(idx, accidents):
             'lng': center.y,
             'features': '-'.join(str(x) for x in sorted(int(x['properties']['osmid']) for x in accident['features']))
         }
-get_accident_list.format = 'csv'
 
 
 def get_accident_street_list(idx, accidents):
@@ -269,11 +309,10 @@ def get_accident_street_list(idx, accidents):
                 'length': idx.shapes[feat_id].length
             }
             break
-get_accident_street_list.format = 'csv'
 
 
 def time_compare(idx, accidents):
-    YEAR_COUNT = 4.0
+    YEAR_COUNT = 3.0
     year_stats = defaultdict(lambda: defaultdict(int))
     for accident in accidents:
         for feat_id in accident['feature_idx']:
@@ -283,8 +322,8 @@ def time_compare(idx, accidents):
     for feat_id, year_stat in year_stats.items():
         feat = idx.features[feat_id]
         length = idx.shapes[feat_id].length or 1
-        old_years_count = sum(year_stat[y] for y in range(2008, 2012))
-        new_years_count = sum(year_stat[y] for y in range(2012, 2017))
+        old_years_count = sum(year_stat[y] for y in range(2011, 2014))
+        new_years_count = sum(year_stat[y] for y in range(2014, 2017))
         difference = new_years_count - old_years_count
         old_mean = old_years_count / YEAR_COUNT
         new_mean = new_years_count / YEAR_COUNT
@@ -323,7 +362,6 @@ def time_compare(idx, accidents):
             },
             "geometry": feat['geometry']
         }
-time_compare.format = 'geojson'
 
 
 def get_missing(idx, accidents):
@@ -348,11 +386,18 @@ def get_missing(idx, accidents):
 
 
 GENERATORS = {
-    'accident_locations': get_accident_locations,
-    'accident_list': get_accident_list,
-    'street_list': get_accident_street_list,
-    'missing': get_missing,
-    'time_compare': time_compare
+    'accident_points': (get_accidents_as_points, 'geojson'),
+    'accident_streets': (get_accidents_as_lines, 'geojson'),
+    'accidents': (get_accidents_as_features, 'geojson'),
+    'accident_list': (get_accident_list, 'csv'),
+    'street_list': (get_accident_street_list, 'csv'),
+    'missing': (get_missing, 'csv'),
+    'time_compare': (time_compare, 'geojson'),
+}
+
+OUTPUT_WRITER = {
+    'csv': write_csv,
+    'geojson': write_geojson
 }
 
 
@@ -366,16 +411,13 @@ def main(name, year, engine=None):
     if not year:
         year = range(2008, 2017)
     accident_generator = idx.get_accidents(year)
-    processor = GENERATORS[name]
+    processor, format = GENERATORS[name]
     processed = processor(idx, accident_generator)
-    if getattr(processor, 'format', 'csv') == 'csv':
-        write_csv(sys.stdout, processed)
-    else:
-        write_geojson(sys.stdout, processed)
+    OUTPUT_WRITER[format](sys.stdout, processed)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Generate GeoJSON from input.')
+    parser = argparse.ArgumentParser(description='Generate different output files from bike accident data.')
     parser.add_argument('name', choices=list(GENERATORS.keys()))
     parser.add_argument('--engine', help='PostGIS engine URL')
     parser.add_argument('--year', type=int, nargs='*', help='year')
