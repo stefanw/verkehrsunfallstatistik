@@ -24,7 +24,7 @@ tabula-0.9.2-jar-with-dependencies.jar:
 
 geo/berlin-latest.shp/roads.shp:
 	mkdir -p geo
-	wget -O geo/berlin-latest.shp.zip "http://download.geofabrik.de/europe/germany/berlin-latest.shp.zip"
+	wget -O geo/berlin-latest.shp.zip "http://download.geofabrik.de/europe/germany/berlin-latest-free.shp.zip"
 	unzip -d geo/berlin-latest.shp geo/berlin-latest.shp.zip
 
 pdfs/radfahrer%.pdf:
