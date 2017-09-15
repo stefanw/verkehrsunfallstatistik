@@ -30,13 +30,13 @@ class GeoIndex(object):
     def __init__(self, filename, district_filename, engine_config,
                  mapping=None, district_history=None):
         with open(filename) as f:
-            js = json.load(f)
+            streets = json.load(f)
         with open(district_filename) as f:
             districts = json.load(f)
 
         self.engine = create_engine(engine_config)
 
-        self.features = js['features']
+        self.features = streets['features']
 
         district_history = district_history or {}
         self.district_history = {}
@@ -65,6 +65,9 @@ class GeoIndex(object):
             self.districts[feature['properties']['spatial_name']] = shape(feature['geometry'])
 
         self.shapes = [shape(feature['geometry']) for feature in self.features]
+        print('Calculating lengths...', file=sys.stderr)
+        self.shape_lengths = [self.get_shape_length(s) for s in self.shapes]
+        print('Done Calculating lengths...', file=sys.stderr)
         self.names = defaultdict(list)
         for i, feature in enumerate(self.features):
             self.names[make_name(feature['properties']['name'])].append(i)
@@ -132,6 +135,17 @@ class GeoIndex(object):
             a.wkt, b.wkt
         )).fetchall()
         return wkt.loads(result[0][0]), wkt.loads(result[0][1])
+
+    def get_shape_length(self, shape):
+        result = self.engine.execute('''SELECT ST_Length(the_geog) As length_spheroid,
+                                               ST_Length(the_geog, false) As length_sphere
+                        FROM (
+                            SELECT ST_GeographyFromText(
+                            'SRID=4326;%s')
+                        As the_geog)
+                        As foo;''' % (shape.wkt)).fetchall()
+
+        return result[0][0]
 
     def get_georeference(self, streets, district=None, year=None):
         len_streets = len(streets)
@@ -244,14 +258,18 @@ def get_accidents_as_lines(idx, accidents):
 
     for feat_id, count in accidents_by_feature.items():
         feat = idx.features[feat_id]
-        length = idx.shapes[feat_id].length or 1
+        length = idx.shape_lengths[feat_id]
+        if not length:
+            count_by_length = None
+        else:
+            count_by_length = count / length
         yield {
             "type": "Feature",
             "properties": {
                 "name": feat['properties']['name'],
                 "length": length,
                 "count": count,
-                "count_by_length": count / length
+                "count_by_length": count_by_length
             },
             "geometry": feat['geometry']
         }
@@ -276,6 +294,17 @@ def get_accident_list(idx, accidents):
         center = accident['center']
         if center is None:
             continue
+
+        oneway_ratio = None
+        ride_length = None
+        shape_length = None
+        if len(accident['features']) == 1:
+            props = idx.features[accident['feature_idx'][0]]['properties']
+            oneway_ratio = props.get('oneway_length', 0) / props.get('total_length', 1)
+            shape_length = idx.shape_lengths[accident['feature_idx'][0]]
+            # Count full non-oneway street as double (both directions)
+            ride_length = (2 - oneway_ratio) * shape_length
+
         yield {
             'street': accident['street'],
             'count': accident['count'],
@@ -283,8 +312,44 @@ def get_accident_list(idx, accidents):
             'directorate': accident['directorate'],
             'lat': center.x,
             'lng': center.y,
+            'oneway_ratio': oneway_ratio,
+            'feature_count': len(accident['features']),
+            'feature_length': shape_length,
+            'ride_length': ride_length,
             'features': '-'.join(str(x) for x in sorted(int(x['properties']['osmid']) for x in accident['features']))
         }
+
+
+def get_accident_list_split(idx, accidents):
+    for accident in accidents:
+        center = accident['center']
+        if center is None:
+            continue
+
+        count = len(accident['features'])
+
+        for feat in accident['feature_idx']:
+            props = idx.features[feat]['properties']
+            oneway_ratio = props.get('oneway_length', 0) / props.get('total_length', 1)
+            shape_length = idx.shape_lengths[feat]
+            # Count full non-oneway street as double (both directions)
+            ride_length = (2 - oneway_ratio) * shape_length
+
+            yield {
+                'street': accident['street'],
+                'single_street': idx.features[feat]['properties']['name'],
+                'count': int(accident['count']) / count,
+                'year': accident['year'],
+                'directorate': accident['directorate'],
+                'lat': center.x,
+                'lng': center.y,
+                'oneway_ratio': oneway_ratio,
+                'feature_count': count,
+                'feature_length': shape_length,
+                'ride_length': ride_length,
+                'features': '-'.join(str(x) for x in sorted(int(x['properties']['osmid']) for x in accident['features'])),
+                'single_feature': idx.features[feat]['properties']['osmid']
+            }
 
 
 def get_accident_street_list(idx, accidents):
@@ -306,7 +371,7 @@ def get_accident_street_list(idx, accidents):
                 'count': accident['count'],
                 'year': accident['year'],
                 'directorate': accident['directorate'],
-                'length': idx.shapes[feat_id].length
+                'length': idx.shape_lengths[feat_id]
             }
             break
 
@@ -321,7 +386,7 @@ def time_compare(idx, accidents):
 
     for feat_id, year_stat in year_stats.items():
         feat = idx.features[feat_id]
-        length = idx.shapes[feat_id].length or 1
+        length = idx.shape_lengths[feat_id]
         old_years_count = sum(year_stat[y] for y in range(2011, 2014))
         new_years_count = sum(year_stat[y] for y in range(2014, 2017))
         difference = new_years_count - old_years_count
@@ -390,6 +455,7 @@ GENERATORS = {
     'accident_streets': (get_accidents_as_lines, 'geojson'),
     'accidents': (get_accidents_as_features, 'geojson'),
     'accident_list': (get_accident_list, 'csv'),
+    'accident_list_split': (get_accident_list_split, 'csv'),
     'street_list': (get_accident_street_list, 'csv'),
     'missing': (get_missing, 'csv'),
     'time_compare': (time_compare, 'geojson'),
@@ -401,16 +467,20 @@ OUTPUT_WRITER = {
 }
 
 
-def main(name, year, engine=None):
+def main(name, years, engine=None):
     engine = engine or os.environ.get('DATABASE')
     idx = GeoIndex('geo/berlin_streets.geojson',
                    'geo/polizeidirektionen.geojson',
                    engine_config=engine,
                    mapping=json.load(open('geo/missing_mapping.json')),
                    district_history=json.load(open('geo/policedistrict_historic.json')))
-    if not year:
-        year = range(2008, 2017)
-    accident_generator = idx.get_accidents(year)
+
+    if not years:
+        years = list(range(2008, 2017))
+    else:
+        years = [int(y) for y in years.split(',')]
+
+    accident_generator = idx.get_accidents(years)
     processor, format = GENERATORS[name]
     processed = processor(idx, accident_generator)
     OUTPUT_WRITER[format](sys.stdout, processed)
@@ -420,7 +490,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate different output files from bike accident data.')
     parser.add_argument('name', choices=list(GENERATORS.keys()))
     parser.add_argument('--engine', help='PostGIS engine URL')
-    parser.add_argument('--year', type=int, nargs='*', help='year')
+    parser.add_argument('--years', help='years')
 
     args = parser.parse_args()
-    main(args.name, args.year, engine=args.engine)
+    main(args.name, args.years, engine=args.engine)

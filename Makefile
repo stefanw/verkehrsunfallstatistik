@@ -2,36 +2,37 @@ all:
 
 PG_ENGINE = postgresql://bikeccidents:bikeccidents@localhost/bikeccidents
 TABULA=tabula-0.9.2-jar-with-dependencies.jar
+ROADS_SHP=geo/berlin-latest.shp/gis.osm_roads_free_1.shp
 
 out/accidents_points_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
 	mkdir -p out
-	python generate.py accident_points --engine $(PG_ENGINE) --year $* > $@
+	python generate.py accident_points --engine $(PG_ENGINE) --years $* > $@
 
 out/accidents_streets_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
 	mkdir -p out
-	python generate.py accident_streets --engine $(PG_ENGINE) --year $* > $@
+	python generate.py accident_streets --engine $(PG_ENGINE) --years $* > $@
 
 out/accidents_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
 	mkdir -p out
-	python generate.py accidents --engine $(PG_ENGINE) --year $* > $@
+	python generate.py accidents --engine $(PG_ENGINE) --years $* > $@
 
 out/accidents_list_%.csv: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
 	mkdir -p out
-	python generate.py accident_list --engine $(PG_ENGINE) --year $* > $@
+	python generate.py accident_list --engine $(PG_ENGINE) --years $* > $@
 
 tabula-0.9.2-jar-with-dependencies.jar:
 	wget "https://github.com/tabulapdf/tabula-java/releases/download/0.9.2/tabula-0.9.2-jar-with-dependencies.jar"
 
-geo/berlin-latest.shp/roads.shp:
+$(ROADS_SHP):
 	mkdir -p geo
-	wget -O geo/berlin-latest.shp.zip "http://download.geofabrik.de/europe/germany/berlin-latest.shp.zip"
+	wget -O geo/berlin-latest.shp.zip "http://download.geofabrik.de/europe/germany/berlin-latest-free.shp.zip"
 	unzip -d geo/berlin-latest.shp geo/berlin-latest.shp.zip
 
 pdfs/radfahrer%.pdf:
 	sh download.sh
 
-geo/berlin_streets.geojson: geo/berlin-latest.shp/roads.shp
-	python collect_streets.py geo/berlin-latest.shp/roads.shp > $@
+geo/berlin_streets.geojson: $(ROADS_SHP)
+	python collect_streets.py $(ROADS_SHP) > $@
 
 geo/polizeidirektionen.geojson:
 	ogr2ogr -t_srs EPSG:4326 -s_srs EPSG:25833 -f "geoJSON" $@ WFS:"http://fbinter.stadt-berlin.de/fb/wfs/geometry/senstadt/re_abschnitt" fis:re_abschnitt
