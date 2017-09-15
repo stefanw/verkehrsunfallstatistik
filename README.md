@@ -12,7 +12,7 @@ The following `make` targets are available for bike accidents (pattern match wit
 ## Prerequisites
 
   - Python3
-  - Java to run Tabula command line
+  - Java to run Tabula on the command line
   - GDAL with ogr2ogr
-  - wget
+  - Some shell utilities make, wget, perl
   - PostgreSQL server with PostGIS enabled database, configure in Makefile
