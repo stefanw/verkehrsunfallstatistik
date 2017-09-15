@@ -13,6 +13,7 @@ from collections import defaultdict
 import sys
 
 import fiona
+from shapely.geometry import shape
 
 
 R = 6371
@@ -33,10 +34,15 @@ def distance(a, b):
 
 
 class StreetSegment(object):
-    def __init__(self, osmid, name, geometry):
+    def __init__(self, osmid, name, geometry, **kwargs):
         self.osmid = osmid
         self.name = name
-        self.geometries = [geometry]
+        self.geometries = [geometry['coordinates']]
+        self.oneway_length = 0
+        self.total_length = shape(geometry).length
+        self.properties = kwargs
+        if self.properties['oneway']:
+            self.oneway_length = shape(geometry).length
 
     def __str__(self):
         return u'%s (%s)' % (self.name, len(self.geometry))
@@ -47,6 +53,8 @@ class StreetSegment(object):
     def try_merge(self, other):
         if self.distance(other) < 0.5:
             self.geometries.extend(other.geometries)
+            self.total_length += other.total_length
+            self.oneway_length += other.oneway_length
             return self
         return None
 
@@ -60,12 +68,16 @@ class StreetSegment(object):
         return mind
 
     def geojson(self):
+        prop = dict(self.properties)
+        prop.update({
+            "name": self.name,
+            "osmid": self.osmid,
+            "total_length": self.total_length,
+            "oneway_length": self.oneway_length
+        })
         return {
             "type": "Feature",
-            "properties": {
-                "name": self.name,
-                "osmid": self.osmid
-            },
+            "properties": prop,
             "geometry": {
                 "type": "MultiLineString",
                 "coordinates": self.geometries
@@ -80,7 +92,9 @@ def collect_streets(shp):
         name = pt['properties']['name']
         osmid = pt['properties']['osm_id']
         if name:
-            streets[name].append(StreetSegment(osmid, name, pt['geometry']['coordinates']))
+            seg = StreetSegment(osmid, name, pt['geometry'],
+                        oneway=pt['properties'].get('oneway', 'B') == 'F')
+            streets[name].append(seg)
             i += 1
             if i % 1000 == 0:
                 sys.stderr.write('Loading %d\n' % i)
