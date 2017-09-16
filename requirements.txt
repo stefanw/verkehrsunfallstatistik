@@ -1,4 +1,12 @@
-fiona
-psycopg2
-shapely
-sqlalchemy
+appdirs==1.4.3
+click==6.7
+click-plugins==1.0.3
+cligj==0.4.0
+Fiona==1.7.6
+munch==2.1.1
+packaging==16.8
+psycopg2==2.7.1
+pyparsing==2.2.0
+Shapely==1.5.17.post1
+six==1.10.0
+SQLAlchemy==1.1.9
