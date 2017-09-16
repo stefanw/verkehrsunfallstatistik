@@ -1,0 +1,4 @@
+fiona
+psycopg2
+shapely
+sqlalchemy
