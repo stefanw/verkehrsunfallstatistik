@@ -1,24 +1,24 @@
 all:
 
-PG_ENGINE = postgresql://bikeccidents:bikeccidents@localhost/bikeccidents
+DATABASE_URL=postgresql://bikeccidents:bikeccidents@localhost/bikeccidents
 TABULA=tabula-0.9.2-jar-with-dependencies.jar
 ROADS_SHP=geo/berlin-latest.shp/gis.osm_roads_free_1.shp
 
 out/accidents_points_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
 	mkdir -p out
-	python generate.py accident_points --engine $(PG_ENGINE) --years $* > $@
+	python generate.py accident_points --engine $(DATABASE_URL) --years $* > $@
 
 out/accidents_streets_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
 	mkdir -p out
-	python generate.py accident_streets --engine $(PG_ENGINE) --years $* > $@
+	python generate.py accident_streets --engine $(DATABASE_URL) --years $* > $@
 
 out/accidents_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
 	mkdir -p out
-	python generate.py accidents --engine $(PG_ENGINE) --years $* > $@
+	python generate.py accidents --engine $(DATABASE_URL) --years $* > $@
 
 out/accidents_list_%.csv: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
 	mkdir -p out
-	python generate.py accident_list --engine $(PG_ENGINE) --years $* > $@
+	python generate.py accident_list --engine $(DATABASE_URL) --years $* > $@
 
 tabula-0.9.2-jar-with-dependencies.jar:
 	wget "https://github.com/tabulapdf/tabula-java/releases/download/0.9.2/tabula-0.9.2-jar-with-dependencies.jar"

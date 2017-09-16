@@ -468,7 +468,7 @@ OUTPUT_WRITER = {
 
 
 def main(name, years, engine=None):
-    engine = engine or os.environ.get('DATABASE')
+    engine = engine or os.environ.get('DATABASE_URL')
     idx = GeoIndex('geo/berlin_streets.geojson',
                    'geo/polizeidirektionen.geojson',
                    engine_config=engine,
