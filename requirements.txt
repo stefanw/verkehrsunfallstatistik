@@ -1,0 +1,3 @@
+fiona
+shapely
+psycopg2
