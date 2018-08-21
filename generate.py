@@ -232,7 +232,8 @@ def get_accident_feature(accident):
             "name": accident['street'],
             "year": int(accident['year']),
             "count": int(accident['count']),
-            "directorate": accident['directorate']
+            "directorate": accident['directorate'],
+            "street_count": len(accident['streets'])
         }
     }
 
