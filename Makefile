@@ -1,7 +1,7 @@
 all:
 
 DATABASE_URL=postgresql://bikeccidents:bikeccidents@localhost/bikeccidents
-TABULA=tabula-0.9.2-jar-with-dependencies.jar
+TABULA=tabula-1.0.2-jar-with-dependencies.jar
 ROADS_SHP=geo/berlin-latest.shp/gis.osm_roads_free_1.shp
 
 out/accidents_points_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
@@ -20,8 +20,8 @@ out/accidents_list_%.csv: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirek
 	mkdir -p out
 	python generate.py accident_list --engine $(DATABASE_URL) --years $* > $@
 
-tabula-0.9.2-jar-with-dependencies.jar:
-	wget "https://github.com/tabulapdf/tabula-java/releases/download/0.9.2/tabula-0.9.2-jar-with-dependencies.jar"
+tabula-1.0.2-jar-with-dependencies.jar:
+	wget "https://github.com/tabulapdf/tabula-java/releases/download/v1.0.2/tabula-1.0.2-jar-with-dependencies.jar"
 
 $(ROADS_SHP):
 	mkdir -p geo
