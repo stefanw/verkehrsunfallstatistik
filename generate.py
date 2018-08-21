@@ -476,7 +476,7 @@ def main(name, years, engine=None):
                    district_history=json.load(open('geo/policedistrict_historic.json')))
 
     if not years:
-        years = list(range(2008, 2017))
+        years = list(range(2008, 2018))
     else:
         years = [int(y) for y in years.split(',')]
 

@@ -37,6 +37,10 @@ geo/berlin_streets.geojson: $(ROADS_SHP)
 geo/polizeidirektionen.geojson:
 	ogr2ogr -t_srs EPSG:4326 -s_srs EPSG:25833 -f "geoJSON" $@ WFS:"http://fbinter.stadt-berlin.de/fb/wfs/geometry/senstadt/re_abschnitt" fis:re_abschnitt
 
+csvs/2017_raw.csv: pdfs/radfahrer2017.pdf $(TABULA)
+	mkdir -p csvs
+	java -jar ./$(TABULA) -p 35-45,47-57,59-70,72-83,85-96,98-111 -a 74,56,811,550 -c 98,130,496 -o $@ pdfs/radfahrer2017.pdf
+
 csvs/2016_raw.csv: pdfs/radfahrer2016.pdf $(TABULA)
 	mkdir -p csvs
 	java -jar ./$(TABULA) -p 35-46,48-59,61-72,74-85,87-99,101-112 -a 74,56,811,550 -c 98,130,505 -o $@ pdfs/radfahrer2016.pdf
