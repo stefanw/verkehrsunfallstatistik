@@ -16,3 +16,8 @@ The following `make` targets are available for bike accidents (pattern match wit
   - GDAL with ogr2ogr
   - Some shell utilities make, wget, perl
   - PostgreSQL server with PostGIS enabled database, configure in Makefile
+
+## Resulting Data
+
+- `csvs/` - tables from PDFs
+- `data/` - geocoded and augmented data
