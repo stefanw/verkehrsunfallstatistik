@@ -5,8 +5,8 @@
 
 The following `make` targets are available for bike accidents (pattern match with year):
 
-- `make out/accidents_points_%.geojson`
-- `make out/accidents_streets_%.geojson`
+- `make data/accidents_points_%.geojson`
+- `make data/accidents_streets_%.geojson`
 
 
 ## Prerequisites

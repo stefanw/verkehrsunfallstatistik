@@ -4,20 +4,20 @@ DATABASE_URL=postgresql://bikeccidents:bikeccidents@localhost/bikeccidents
 TABULA=tabula-1.0.2-jar-with-dependencies.jar
 ROADS_SHP=geo/berlin-latest.shp/gis.osm_roads_free_1.shp
 
-out/accidents_points_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
-	mkdir -p out
+data/accidents_points_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
+	mkdir -p data
 	python generate.py accident_points --engine $(DATABASE_URL) --years $* > $@
 
-out/accidents_streets_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
-	mkdir -p out
+data/accidents_streets_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
+	mkdir -p data
 	python generate.py accident_streets --engine $(DATABASE_URL) --years $* > $@
 
-out/accidents_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
-	mkdir -p out
+data/accidents_%.geojson: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
+	mkdir -p data
 	python generate.py accidents --engine $(DATABASE_URL) --years $* > $@
 
-out/accidents_list_%.csv: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
-	mkdir -p out
+data/accidents_list_%.csv: csvs/%.csv geo/berlin_streets.geojson geo/polizeidirektionen.geojson
+	mkdir -p data
 	python generate.py accident_list --engine $(DATABASE_URL) --years $* > $@
 
 tabula-1.0.2-jar-with-dependencies.jar:
