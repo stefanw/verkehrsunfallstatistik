@@ -24,6 +24,7 @@ The following `make` targets are available for bike accidents (pattern match wit
 
 ## Map / Visualization
 
+- [Map of data for 2018](https://stefanwehrmeyer.carto.com/viz/e11e4a59-8d7c-465c-a001-00970c793184/public_map)
 - [Map of data for 2017](https://stefanwehrmeyer.carto.com/viz/4fc39e13-8dbb-4d3f-a181-b2918861b6de/public_map)
 - [Map of data for 2016](https://stefanwehrmeyer.carto.com/viz/5eae5a82-366a-11e7-a26a-0e233c30368f/public_map)
 - [Map of data for 2015](https://stefanwehrmeyer.carto.com/viz/06889e1a-21b4-11e6-a734-0ea31932ec1d/public_map)
