@@ -1,6 +1,6 @@
 *.pyc
 *.jar
-csvs/
+csvs/*_raw.csv
 geo/
 out/
 pdfs/
