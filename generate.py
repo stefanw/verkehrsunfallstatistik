@@ -13,6 +13,7 @@ from shapely import wkt
 
 
 NON_LOWER_RE = re.compile('[^a-z]|aße$|asse$')
+MAX_YEAR = 2018
 
 
 def make_name(name):
@@ -385,11 +386,14 @@ def time_compare(idx, accidents):
             year = int(accident['year'])
             year_stats[feat_id][year] += int(accident['count'])
 
+    last_year = MAX_YEAR + 1
+    new_years = (last_year - YEAR_COUNT, last_year)
+    old_years = (new_years[0] - YEAR_COUNT, new_years[0])
     for feat_id, year_stat in year_stats.items():
         feat = idx.features[feat_id]
         length = idx.shape_lengths[feat_id]
-        old_years_count = sum(year_stat[y] for y in range(2011, 2014))
-        new_years_count = sum(year_stat[y] for y in range(2014, 2017))
+        old_years_count = sum(year_stat[y] for y in range(*old_years))
+        new_years_count = sum(year_stat[y] for y in range(*new_years))
         difference = new_years_count - old_years_count
         old_mean = old_years_count / YEAR_COUNT
         new_mean = new_years_count / YEAR_COUNT
@@ -477,7 +481,7 @@ def main(name, years, engine=None):
                    district_history=json.load(open('geo/policedistrict_historic.json')))
 
     if not years:
-        years = list(range(2008, 2018))
+        years = list(range(2008, MAX_YEAR + 1))
     else:
         years = [int(y) for y in years.split(',')]
 
